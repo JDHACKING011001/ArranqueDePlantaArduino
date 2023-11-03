@@ -6,25 +6,25 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 RTC_DS3231 rtc;
 
-int signal_planta = 11;
-int signal_luz = 10;
-int select_man = 9;
-int select_aut = 8;
-int arranque = 7;
-int planta_off = 6;
-bool activar_modo;
+int signal_planta = 11; //esta es una entrada para saber si la planta encendio o no
+int signal_luz = 10; //esta es una entrada para saber si hay luz por cadela
+int select_man = 9; //entrada para seleccionar modo manual
+int select_aut = 8; //entrada para seleccionar modo automatico
+int arranque = 7; //salida de intentos de arranque
+int planta_on_off = 6; //salida para poder encender y apagar la planta
+bool activar_modo; //varaible boolenana para activar los modos
 
 int zellerDia;
 //variables para la congruencia de zeller
 
 void setup() {
 
-  pinMode(signal_luz, INPUT_PULLUP);
-  pinMode(signal_planta, INPUT_PULLUP);
-  pinMode(select_man, INPUT_PULLUP);
-  pinMode(select_aut, INPUT_PULLUP);
+  pinMode(signal_luz, INPUT);
+  pinMode(signal_planta, INPUT);
+  pinMode(select_man, INPUT);
+  pinMode(select_aut, INPUT);
   pinMode(arranque, OUTPUT);
-  pinMode(planta_off, OUTPUT);
+  pinMode(planta_on_off, OUTPUT);
 
   Serial.begin(9600);
   lcd.init();
@@ -91,11 +91,11 @@ void modo_auto() {
   lcd.setCursor(0, 0);
   lcd.print("Modo Automatico   ");
 
-  if (digitalRead(signal_luz) == LOW and digitalRead(signal_planta) == HIGH) {  //si no hay luz, la planta esta apagada intenta arracar la plnata
+  if (digitalRead(signal_luz) == LOW and digitalRead(signal_planta) == LOW) {  //si no hay luz, la planta esta apagada intenta arracar la plnata
     Serial.println("Modo Automatico");
+    digitalWrite(planta_on_off, HIGH); 
 
     for (int i = 0; i < 3; i++) {  //Inteneta arrancar la planta 3veces
-
       digitalWrite(arranque, HIGH);
       delay(1500);
       digitalWrite(arranque, LOW);
@@ -103,7 +103,7 @@ void modo_auto() {
       Serial.print("Intentos de Arranque");
       Serial.println(i);
 
-      if (digitalRead(signal_planta) == LOW) {  //si arranca deja de hacer más intentos
+      if (digitalRead(signal_planta) == HIGH) {  //si arranca deja de hacer más intentos
         digitalWrite(arranque, LOW);
         Serial.println("Planta encendida");
         break;
@@ -113,9 +113,9 @@ void modo_auto() {
         while (true) {
           lcd.setCursor(0, 0);
           lcd.print("Error");
-          if (digitalRead(signal_planta) == LOW) { // cuando arranque sale del bucle de error..
+          if (digitalRead(signal_planta) == HIGH) { // cuando arranque la plnata de manera manual sale del bucle de error..
             lcd.setCursor(0, 0);
-            lcd.print("Error");
+            lcd.print("Modo Automatico     ");
             break;
           }
         }
@@ -124,9 +124,7 @@ void modo_auto() {
   }
 
   if (digitalRead(signal_luz) == HIGH and digitalRead(signal_planta) == LOW) {  //si llega la luz y la plnata este encendida apaga la plnata
-    digitalWrite(planta_off, HIGH);
-    delay(2000);
-    digitalWrite(planta_off, LOW);
+    digitalWrite(planta_on_off, LOW);
   }
 }
 
